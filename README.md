@@ -7,7 +7,8 @@ Automatically copies all photos, videos are provided as links to VK video(exampl
 ## Setup
 1. `git clone https://github.com/maVovk/vk_to_tg_duplicator.git`
 2. Set all token variables in `.env` file. Instructions on how to get all tokens are given there.
-3. <b>For debug</b>
+3. Make bot an administrator in Telegram channel
+4. <b>For debug</b>
 `pip install -r requirements.txt`
 `python main.py`
 <b>For production</b>

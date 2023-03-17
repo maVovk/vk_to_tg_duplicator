@@ -81,8 +81,6 @@ async def handle_post(event):
     post = add_videos(post)
     post = process_text(post, obj)
 
-    print(post)
-
     match len(post['attachments']):
         case 0:
             await send_text_message_to_channel(TELEGRAM_CHANNEL_ID, post)

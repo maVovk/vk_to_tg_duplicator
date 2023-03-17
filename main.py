@@ -71,12 +71,22 @@ def add_videos(post):
     return post
 
 
+def check_if_advertisement(event):
+    if event['marked_as_ads'] == 1:
+        return True
+
+    return False
+
+
 async def handle_post(event):
     obj = event['object']
     post = {
         'text': obj['text'],
         'attachments': process_attachments(obj['attachments'])
     }
+
+    if check_if_advertisement(obj):
+        return
 
     post = add_videos(post)
     post = process_text(post, obj)

@@ -1,13 +1,11 @@
-import io
-
 import vk_api
-import json
 import os
-import requests
-import aiohttp
 import asyncio
 import aiogram
+import uuid
 from aiogram import types, Dispatcher
+
+from video_downloader import download_video
 
 from dotenv import load_dotenv
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
@@ -62,10 +60,17 @@ def process_text(post, event):
     return post
 
 
-def add_videos(post):
+def add_videos(post, post_id):
     for el in post['attachments']:
         if el[0] == 'video':
-            post['text'] = f'{post["text"]}\n\n{el[1]}'
+            try:
+                if download_video(el[1]):
+                    post['videoExists'] = True
+                    pass
+                else:
+                    post['text'] = f'{post["text"]}\n\n{el[1]}'
+            except Exception as e:
+                post['text'] = f'{post["text"]}\n\n{el[1]}'
 
     post['attachments'] = [el for el in post['attachments'] if el[0] != 'video']
     return post
@@ -79,6 +84,8 @@ def check_if_advertisement(event):
 
 
 async def handle_post(event):
+    print(event)
+    post_id = event['event_id']
     obj = event['object']
     post = {
         'text': obj['text'],
@@ -88,8 +95,17 @@ async def handle_post(event):
     if check_if_advertisement(obj):
         return
 
-    post = add_videos(post)
+    post = add_videos(post, post_id)
     post = process_text(post, obj)
+
+    if post['videoExists']:
+        await send_video_to_channel(TELEGRAM_CHANNEL_ID, post)
+
+        # delete .mp4 files
+        for file in os.listdir():
+            if file.endswith('.mp4'):
+                os.remove(file)
+        return
 
     match len(post['attachments']):
         case 0:
@@ -128,5 +144,12 @@ async def send_media_group_to_channel(channel_id, post):
     await bot.send_media_group(channel_id, media=media)
 
 
+async def send_video_to_channel(channel_id, post):
+    # get file with .mp4 extension
+    video_file = [file for file in os.listdir() if file.endswith('.mp4')][0]
+    await bot.send_video(chat_id=channel_id, video=types.input_file.InputFile(video_file),
+                         caption=post['text'].strip())
+
 if __name__ == "__main__":
+    print('Bot running...')
     asyncio.run(run_script())
